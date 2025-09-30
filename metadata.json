@@ -1,0 +1,5 @@
+{
+  "name": "GreenBot: AI Education Assistant",
+  "description": "An AI-powered chatbot designed to assist with learning and education. Featuring a lush green theme, GreenBot can answer questions, explain complex concepts, and even generate images, all powered by the Gemini API.",
+  "requestFramePermissions": []
+}
