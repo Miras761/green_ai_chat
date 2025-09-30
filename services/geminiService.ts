@@ -1,17 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
 // IMPORTANT: This application uses process.env.API_KEY for the Gemini API key.
-// It is expected to be set in the deployment environment.
-// For local development, you can use a .env file and a tool like Vite to load it.
+// It is expected to be set in the deployment environment (e.g., Vercel settings).
 const API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
-  // In a real app, you might want to handle this more gracefully,
-  // maybe showing a message on the UI.
-  console.error("Gemini API key not found. Please set the API_KEY environment variable.");
-}
+// We initialize the client once. If the key is missing, functions will return an error.
+const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const MISSING_KEY_ERROR = "Configuration Error: The Gemini API key is not set. Please add the `API_KEY` as an environment variable in your Vercel project settings and then redeploy the application.";
 
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -25,6 +21,11 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const runChat = async (prompt: string, imageFile?: File): Promise<string> => {
+  if (!ai) {
+    console.error(MISSING_KEY_ERROR);
+    return MISSING_KEY_ERROR;
+  }
+  
   try {
     const model = 'gemini-2.5-flash';
     const textPart = { text: prompt };
@@ -50,6 +51,11 @@ export const runChat = async (prompt: string, imageFile?: File): Promise<string>
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
+  if (!ai) {
+    console.error(MISSING_KEY_ERROR);
+    return MISSING_KEY_ERROR;
+  }
+    
   try {
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
