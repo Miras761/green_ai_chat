@@ -1,13 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
 // IMPORTANT: This application uses process.env.API_KEY for the Gemini API key.
-// It is expected to be set in the deployment environment (e.g., Vercel settings).
-const API_KEY = process.env.API_KEY;
+// It is expected to be set in the deployment environment.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// We initialize the client once. If the key is missing, functions will return an error.
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
-const MISSING_KEY_ERROR = "Configuration Error: The Gemini API key is not set. Please add the `API_KEY` as an environment variable in your Vercel project settings and then redeploy the application.";
+const MISSING_KEY_ERROR = "Configuration Error: The Gemini API key named 'API_KEY' was not found in the environment. Please ensure it is set correctly in your project settings and redeploy the application.";
 
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -20,8 +17,19 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
+const getErrorMessage = (error: unknown): string => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  if (/API key not valid/.test(errorMessage)) {
+      return "Authentication Error: The provided Gemini API key is not valid. Please check your key and environment configuration.";
+  }
+  if (/API key is missing/.test(errorMessage)) {
+      return MISSING_KEY_ERROR;
+  }
+  return `Sorry, an unexpected error occurred. Please check the console for details.`;
+}
+
 export const runChat = async (prompt: string, imageFile?: File): Promise<string> => {
-  if (!ai) {
+  if (!process.env.API_KEY) {
     console.error(MISSING_KEY_ERROR);
     return MISSING_KEY_ERROR;
   }
@@ -46,12 +54,12 @@ export const runChat = async (prompt: string, imageFile?: File): Promise<string>
     return response.text;
   } catch (error) {
     console.error("Error in runChat:", error);
-    return `Sorry, I encountered an error. Please check the console for details. (Is the API key configured correctly?)`;
+    return getErrorMessage(error);
   }
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
-  if (!ai) {
+  if (!process.env.API_KEY) {
     console.error(MISSING_KEY_ERROR);
     return MISSING_KEY_ERROR;
   }
@@ -75,6 +83,6 @@ export const generateImage = async (prompt: string): Promise<string> => {
     }
   } catch (error) {
     console.error("Error in generateImage:", error);
-    return `Sorry, I couldn't generate an image. Please check the console for details.`;
+    return getErrorMessage(error);
   }
 };
